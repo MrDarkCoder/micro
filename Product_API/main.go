@@ -18,13 +18,11 @@ func main() {
 
 	// create the handlers
 	l := log.New(os.Stdout, "product_api", log.LstdFlags)
-	hh := handlers.NewHello(l)
-	gg := handlers.NewGoodBye(l)
+	ph := handlers.NewProducts(l)
 
 	// create a new serve mux and register the handlers
 	sermux := http.NewServeMux()
-	sermux.Handle("/", hh)
-	sermux.Handle("/goodbye", gg)
+	sermux.Handle("/", ph)
 
 	// manually creating a new server
 	server := http.Server{
