@@ -1,12 +1,13 @@
 package handlers
 
 import (
+	"context"
 	"log"
 	"net/http"
-	"regexp"
 	"strconv"
 
 	"github.com/MrDarkCoder/productapi/data"
+	"github.com/gorilla/mux"
 )
 
 // Products is a http.Handler
@@ -19,8 +20,100 @@ func NewProducts(l *log.Logger) *Products {
 	return &Products{l}
 }
 
-// ServeHTTP is the main entry point for the handler and staisfies the http.Handler
-// interface
+func (p *Products) GetProducts(rw http.ResponseWriter, rq *http.Request) {
+	// fetch the products from the datastore
+	lp := data.GetProducts()
+
+	// d, err := json.Marshal(lp) instead if this, use encoders(lit faster)
+
+	// serialize the list to JSON
+	err := lp.ToJSON(rw)
+	if err != nil {
+		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
+	}
+}
+
+func (p *Products) AddProduct(rw http.ResponseWriter, rq *http.Request) {
+	p.l.Println("Handle POST Product")
+	// using our middleware
+	prod := rq.Context().Value(KeyProduct{}).(data.Product)
+	data.AddProduct(&prod)
+
+	/*
+		prod := &data.Product{}
+		err := prod.FromJSON(rq.Body)
+		if err != nil {
+			http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
+		}
+		data.AddProduct(prod)
+	*/
+}
+
+func (p Products) UpdateProducts(rw http.ResponseWriter, rq *http.Request) {
+	p.l.Println("Handle PUT Product")
+
+	// getting id using mux
+	params := mux.Vars(rq)
+	id, err := strconv.Atoi(params["id"])
+
+	if err != nil {
+		http.Error(rw, "Unable to COnvert to string", http.StatusBadRequest)
+		return
+	}
+
+	/*
+		prod := &data.Product{}
+
+		err := prod.FromJSON(rq.Body)
+		if err != nil {
+			http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
+		}
+		err = data.UpdateProduct(id, prod)
+	*/
+
+	p.l.Println("Handle PUT Product", id)
+	prod := rq.Context().Value(KeyProduct{}).(data.Product)
+
+	err = data.UpdateProduct(id, &prod)
+	if err == data.ErrProductNotFound {
+		http.Error(rw, "Product not found", http.StatusNotFound)
+		return
+	}
+
+	if err != nil {
+		http.Error(rw, "Product not found", http.StatusInternalServerError)
+		return
+	}
+}
+
+// middleware for product validation
+type KeyProduct struct{}
+
+func (p Products) MiddlewareValidateProduct(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(rw http.ResponseWriter, rq *http.Request) {
+		// take pur product
+		prod := data.Product{}
+
+		// Deserialize
+		err := prod.FromJSON(rq.Body)
+		if err != nil {
+			p.l.Println("[ERROR] deserializing product", err)
+			http.Error(rw, "Error reading product", http.StatusBadRequest)
+			return
+		}
+
+		// add the product to the context
+		ctx := context.WithValue(rq.Context(), KeyProduct{}, prod)
+		rq = rq.WithContext(ctx)
+
+		// Call the next handler, which can be another middleware in the chain, or the final handler.
+		next.ServeHTTP(rw, rq)
+	})
+}
+
+/*
+ServeHTTP is the main entry point for the handler and staisfies the http.Handler
+interface
 func (p *Products) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
 	// handle the request for a list of products
 	if rq.Method == http.MethodGet {
@@ -66,53 +159,5 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, rq *http.Request) {
 
 	// catch all
 	// if no method is satisfied return an error
-	rw.WriteHeader(http.StatusMethodNotAllowed)
-}
-
-func (p *Products) getProducts(rw http.ResponseWriter, rq *http.Request) {
-	// fetch the products from the datastore
-	lp := data.GetProducts()
-
-	// d, err := json.Marshal(lp) instead if this, use encoders(lit faster)
-
-	// serialize the list to JSON
-	err := lp.ToJSON(rw)
-	if err != nil {
-		http.Error(rw, "Unable to marshal json", http.StatusInternalServerError)
-	}
-}
-
-func (p *Products) addProduct(rw http.ResponseWriter, rq *http.Request) {
-	p.l.Println("Handle POST Product")
-
-	prod := &data.Product{}
-
-	err := prod.FromJSON(rq.Body)
-	if err != nil {
-		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
-	}
-
-	data.AddProduct(prod)
-}
-
-func (p Products) updateProducts(id int, rw http.ResponseWriter, rq *http.Request) {
-	p.l.Println("Handle PUT Product")
-
-	prod := &data.Product{}
-
-	err := prod.FromJSON(rq.Body)
-	if err != nil {
-		http.Error(rw, "Unable to unmarshal json", http.StatusBadRequest)
-	}
-
-	err = data.UpdateProduct(id, prod)
-	if err == data.ErrProductNotFound {
-		http.Error(rw, "Product not found", http.StatusNotFound)
-		return
-	}
-
-	if err != nil {
-		http.Error(rw, "Product not found", http.StatusInternalServerError)
-		return
-	}
-}
+	rw.WriteHeader(http.StatusMethodNotAllowed)}
+*/
