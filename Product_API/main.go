@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/MrDarkCoder/productapi/handlers"
+	"github.com/gorilla/mux"
 )
 
 // var bindAddress = env.String("BIND_ADDRESS", false, ":9090", "Bind address for the server")
@@ -21,13 +22,32 @@ func main() {
 	ph := handlers.NewProducts(l)
 
 	// create a new serve mux and register the handlers
-	sermux := http.NewServeMux()
-	sermux.Handle("/", ph)
+	// sermux := http.NewServeMux()
+	// sermux.Handle("/", ph)
+	
+	// create a new serve mux and register the handlers using gorrila/mux
+	muxrouter := mux.NewRouter()
+	// subrouters
+	// for GET
+	getRouter := muxrouter.Methods(http.MethodGet).Subrouter()
+	getRouter.HandleFunc("/", ph.GetProducts)
+
+	// for PUT
+	putRouter := muxrouter.Methods(http.MethodPut).Subrouter()
+	putRouter.HandleFunc("/{id:[0-9]+}", ph.UpdateProducts)
+	putRouter.Use(ph.MiddlewareValidateProduct)
+	
+	// for POST
+	postRouter := muxrouter.Methods(http.MethodPost).Subrouter()
+	postRouter.HandleFunc("/", ph.AddProduct)
+	postRouter.Use(ph.MiddlewareValidateProduct)
+	
+	// muxrouter.Handle("/product", ph).Methods("GET")
 
 	// manually creating a new server
 	server := http.Server{
 		Addr:         ":9090",           // configure the bind address
-		Handler:      sermux,            // set the default handler
+		Handler:      muxrouter,         // set the default handler
 		ErrorLog:     l,                 // set the logger for the server
 		ReadTimeout:  5 * time.Second,   // max time to read request from the client
 		WriteTimeout: 10 * time.Second,  // max time to write response to the client
