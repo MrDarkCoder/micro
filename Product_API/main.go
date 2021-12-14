@@ -10,6 +10,7 @@ import (
 
 	"github.com/MrDarkCoder/productapi/data"
 	"github.com/MrDarkCoder/productapi/handlers"
+	"github.com/go-openapi/runtime/middleware"
 	"github.com/gorilla/mux"
 )
 
@@ -28,7 +29,7 @@ func main() {
 	// create a new serve mux and register the handlers
 	// sermux := http.NewServeMux()
 	// sermux.Handle("/", ph)
-	
+
 	// create a new serve mux and register the handlers using gorrila/mux
 	muxrouter := mux.NewRouter()
 	// subrouters
@@ -41,7 +42,7 @@ func main() {
 	putRouter := muxrouter.Methods(http.MethodPut).Subrouter()
 	putRouter.HandleFunc("/products", ph.Update)
 	putRouter.Use(ph.MiddlewareValidateMyProduct)
-	
+
 	// for POST
 	postRouter := muxrouter.Methods(http.MethodPost).Subrouter()
 	postRouter.HandleFunc("/products", ph.Create)
@@ -49,8 +50,14 @@ func main() {
 
 	deleteRouter := muxrouter.Methods(http.MethodDelete).Subrouter()
 	deleteRouter.HandleFunc("/products/{id:[0-9]+}", ph.Delete)
-	
+
 	// muxrouter.Handle("/product", ph).Methods("GET")
+
+	opts := middleware.RedocOpts{SpecURL: "/swagger.yaml"}
+	sh := middleware.Redoc(opts, nil)
+
+	getRouter.Handle("/docs", sh)
+	getRouter.Handle("/swagger.yaml", http.FileServer(http.Dir("./")))
 
 	// manually creating a new server
 	server := http.Server{
@@ -86,6 +93,7 @@ func main() {
 	ctx, err := context.WithTimeout(context.Background(), 30*time.Second)
 	if err != nil {
 		l.Print("went wrong quit the server")
+		panic(err)
 	}
 	server.Shutdown(ctx)
 }

@@ -122,7 +122,7 @@ func (p *MyProducts) ListSingle(rw http.ResponseWriter, rq *http.Request) {
 // Create handles POST requests to add new products
 func (p *MyProducts) Create(rw http.ResponseWriter, r *http.Request) {
 	// fetch the product from the context
-	prod := r.Context().Value(KeyProduct{}).(data.MyProduct)
+	prod := r.Context().Value(KeyProduct{}).(*data.MyProduct)
 
 	p.l.Printf("[DEBUG] Inserting product: %#v\n", prod)
 	data.AddMyProduct(prod)
@@ -140,7 +140,7 @@ func (p *MyProducts) Create(rw http.ResponseWriter, r *http.Request) {
 func (p *MyProducts) Update(rw http.ResponseWriter, rq *http.Request) {
 
 	// fetch the product from the context
-	prod := rq.Context().Value(KeyProduct{}).(data.MyProduct)
+	prod := rq.Context().Value(KeyProduct{}).(*data.MyProduct)
 	p.l.Println("[DEBUG] updating record id", prod.ID)
 
 	err := data.UpdateMyProduct(prod)
@@ -206,7 +206,7 @@ func (p *MyProducts) MiddlewareValidateMyProduct(next http.Handler) http.Handler
 
 		// validate the product
 		errs := p.v.Validate(prod)
-		if len(errs) != 0 {
+		if errs != nil || len(errs) != 0 {
 			p.l.Println("[ERROR] validating product", errs)
 
 			// return the validation messages as an array

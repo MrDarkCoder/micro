@@ -33,7 +33,7 @@ type MyProduct struct {
 	//
 	// required: true
 	// pattern: [a-z]+-[a-z]+-[a-z]+
-	SKU string `json:"sku" validate:"sku"`
+	SKU string `json:"sku" validate:"mysku"`
 }
 
 // Products Defines a slice of Product
@@ -71,24 +71,24 @@ func GetMyProductsByID(id int) (*MyProduct, error) {
 // item.
 // If a product with the given id does not exist in the database
 // this function returns a ProductNotFound error
-func UpdateMyProduct(p MyProduct) error {
+func UpdateMyProduct(p *MyProduct) error {
 	index := findIndexByProductID(p.ID)
 	if index == -1 {
 		return ErrProductNotFounded
 	}
 
 	// update the product in the DB
-	myProductList[index] = &p
+	myProductList[index] = p
 
 	return nil
 }
 
 // AddProduct adds a new product to the database
-func AddMyProduct(p MyProduct) {
+func AddMyProduct(p *MyProduct) {
 	// get the next id in sequence
 	maxID := myProductList[len(myProductList)-1].ID
 	p.ID = maxID + 1
-	myProductList = append(myProductList, &p)
+	myProductList = append(myProductList, p)
 }
 
 // DeleteProduct deletes a product from the database
@@ -98,7 +98,7 @@ func DeleteMyProduct(id int) error {
 		return ErrProductNotFound
 	}
 
-	myProductList = append(myProductList[:index], myProductList[index+1])
+	myProductList = append(myProductList[:index], myProductList[index+1:]...)
 
 	return nil
 }
