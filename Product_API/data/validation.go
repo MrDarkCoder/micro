@@ -26,35 +26,36 @@ func (v ValidationError) Error() string {
 type ValidationErrors []ValidationError
 
 // Errors converts the slice into a string slice
-func (v ValidationErrors) Errors() []string{
+func (v ValidationErrors) Errors() []string {
 	errs := []string{}
-	for _,err := range v {
+	for _, err := range v {
 		errs = append(errs, err.Error())
 	}
 	return errs
 }
 
 // Validation Contains
-type Validation struct{
+type Validation struct {
 	validated *validator.Validate
 }
 
 // New Validation : creaets a validation type
-func NewValidation() *Validation{
+func NewValidation() *Validation {
 	validated := validator.New()
 	validated.RegisterValidation("mysku", validateMySKU)
 	return &Validation{validated}
 }
 
 func (v *Validation) Validate(i interface{}) ValidationErrors {
-	errs := v.validated.Struct(i).(validator.ValidationErrors)
 
-	if len(errs) == 0 {
+	errs := v.validated.Struct(i)
+
+	if errs == nil {
 		return nil
 	}
 
 	var returnErrs []ValidationError
-	for _, err := range errs {
+	for _, err := range errs.(validator.ValidationErrors) {
 		// cast the FieldError into our ValidationError and append to the slice
 		ve := ValidationError{err.(validator.FieldError)}
 		returnErrs = append(returnErrs, ve)
@@ -69,7 +70,12 @@ func validateMySKU(fl validator.FieldLevel) bool {
 	re := regexp.MustCompile(`[a-z]+-[a-z]+-[a-z]+`)
 	sku := re.FindAllString(fl.Field().String(), -1)
 
+	// if len(sku) == 1 {
+	// 	return true
+	// }
+
 	return len(sku) == 1
+
 }
 
 /*
