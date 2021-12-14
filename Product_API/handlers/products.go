@@ -50,7 +50,7 @@ func (p *Products) AddProduct(rw http.ResponseWriter, rq *http.Request) {
 	*/
 }
 
-func (p Products) UpdateProducts(rw http.ResponseWriter, rq *http.Request) {
+func (p *Products) UpdateProducts(rw http.ResponseWriter, rq *http.Request) {
 	p.l.Println("Handle PUT Product")
 
 	// getting id using mux
@@ -86,6 +86,9 @@ func (p Products) UpdateProducts(rw http.ResponseWriter, rq *http.Request) {
 		return
 	}
 }
+
+// Delete Handler
+// func () DeleteProduct(){}
 
 // middleware for product validation
 type KeyProduct struct{}

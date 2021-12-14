@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/MrDarkCoder/productapi/data"
 	"github.com/MrDarkCoder/productapi/handlers"
 	"github.com/gorilla/mux"
 )
@@ -17,9 +18,12 @@ func main() {
 	log.Println("WELCOME")
 	// env.Parse()
 
-	// create the handlers
 	l := log.New(os.Stdout, "product_api", log.LstdFlags)
-	ph := handlers.NewProducts(l)
+	v := data.NewValidation()
+
+	// create the handlers
+	// ph := handlers.NewProducts(l)
+	ph := handlers.NewMyProducts(l, v)
 
 	// create a new serve mux and register the handlers
 	// sermux := http.NewServeMux()
@@ -30,17 +34,21 @@ func main() {
 	// subrouters
 	// for GET
 	getRouter := muxrouter.Methods(http.MethodGet).Subrouter()
-	getRouter.HandleFunc("/", ph.GetProducts)
+	getRouter.HandleFunc("/products", ph.ListAll)
+	getRouter.HandleFunc("/products/{id:[0-9]+}", ph.ListSingle)
 
 	// for PUT
 	putRouter := muxrouter.Methods(http.MethodPut).Subrouter()
-	putRouter.HandleFunc("/{id:[0-9]+}", ph.UpdateProducts)
-	putRouter.Use(ph.MiddlewareValidateProduct)
+	putRouter.HandleFunc("/products", ph.Update)
+	putRouter.Use(ph.MiddlewareValidateMyProduct)
 	
 	// for POST
 	postRouter := muxrouter.Methods(http.MethodPost).Subrouter()
-	postRouter.HandleFunc("/", ph.AddProduct)
-	postRouter.Use(ph.MiddlewareValidateProduct)
+	postRouter.HandleFunc("/products", ph.Create)
+	postRouter.Use(ph.MiddlewareValidateMyProduct)
+
+	deleteRouter := muxrouter.Methods(http.MethodDelete).Subrouter()
+	deleteRouter.HandleFunc("/products/{id:[0-9]+}", ph.Delete)
 	
 	// muxrouter.Handle("/product", ph).Methods("GET")
 
