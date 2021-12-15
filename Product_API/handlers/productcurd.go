@@ -64,6 +64,7 @@ func getMyProductID(rq *http.Request) int {
 // ListAll handles GET requests and returns all current products
 func (p *MyProducts) ListAll(rw http.ResponseWriter, rq *http.Request) {
 	p.l.Println("[DEBUG] Get All Products")
+	rw.Header().Add("Content-Type", "application/json")
 
 	prods := data.GetMyProducts()
 
@@ -76,7 +77,7 @@ func (p *MyProducts) ListAll(rw http.ResponseWriter, rq *http.Request) {
 
 }
 
-// swagger:route GET /products/{id} products listSingle
+// swagger:route GET /products/{id} products listSingleProduct
 // Return a list of products from the database
 // responses:
 //	200: productResponse
@@ -86,6 +87,7 @@ func (p *MyProducts) ListAll(rw http.ResponseWriter, rq *http.Request) {
 func (p *MyProducts) ListSingle(rw http.ResponseWriter, rq *http.Request) {
 	id := getMyProductID(rq)
 	p.l.Println("[DEBUG] get record id", id)
+	rw.Header().Add("Content-Type", "application/json")
 
 	prod, err := data.GetMyProductsByID(id)
 
@@ -139,6 +141,8 @@ func (p *MyProducts) Create(rw http.ResponseWriter, r *http.Request) {
 // Update handles PUT requests to update products
 func (p *MyProducts) Update(rw http.ResponseWriter, rq *http.Request) {
 
+	rw.Header().Add("Content-Type", "application/json")
+	
 	// fetch the product from the context
 	prod := rq.Context().Value(KeyProduct{}).(*data.MyProduct)
 	p.l.Println("[DEBUG] updating record id", prod.ID)
@@ -166,6 +170,7 @@ func (p *MyProducts) Update(rw http.ResponseWriter, rq *http.Request) {
 
 // Delete handles DELETE requests and removes items from the database
 func (p *MyProducts) Delete(rw http.ResponseWriter, rq *http.Request) {
+	rw.Header().Add("Content-Type", "application/json")
 	id := getMyProductID(rq)
 
 	p.l.Println("[DEBUG] deleting record id", id)
